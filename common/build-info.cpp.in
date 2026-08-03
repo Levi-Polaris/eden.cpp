@@ -1,0 +1,35 @@
+#include "build-info.h"
+
+#include <cstdio>
+#include <string>
+
+int EDEN_BUILD_NUMBER = 0;
+char const * EDEN_COMMIT = "@EDEN_BUILD_COMMIT@";
+char const * EDEN_COMPILER = "@BUILD_COMPILER@";
+char const * EDEN_BUILD_TARGET = "@BUILD_TARGET@";
+
+int eden_build_number(void) {
+    return EDEN_BUILD_NUMBER;
+}
+
+const char * eden_commit(void) {
+    return EDEN_COMMIT;
+}
+
+const char * eden_compiler(void) {
+    return EDEN_COMPILER;
+}
+
+const char * eden_build_target(void) {
+    return EDEN_BUILD_TARGET;
+}
+
+const char * eden_build_info(void) {
+    static std::string s = "b" + std::to_string(EDEN_BUILD_NUMBER) + "-" + EDEN_COMMIT;
+    return s.c_str();
+}
+
+void eden_print_build_info(void) {
+    fprintf(stderr, "%s: build = %d (%s)\n",      __func__, eden_build_number(), eden_commit());
+    fprintf(stderr, "%s: built with %s for %s\n", __func__, eden_compiler(), eden_build_target());
+}
