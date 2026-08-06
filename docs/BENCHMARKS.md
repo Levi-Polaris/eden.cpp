@@ -52,6 +52,18 @@ an Eden OE choice, not an engine claim):
 | qwen35-4b-q4 | 2.7 GB | 125 | 1.17 | 4B dense · 256K · image/video |
 | qwen35-9b-q4 | 5.6 GB | 68 | 2.23 | 9B dense · 256K · image/video |
 | qwen36-27b-q4 | 16.5 GB | 23 | 7.91 | 27B dense · 256K · image/video |
+| **qwen36-35b-A3B Q4_K_M** | **20.2 GB** | **173** | 0.97 | **35B MoE (A3B) · 256K · image/video** — fastest in the ladder |
+
+**Qwen3.6-35B-A3B** — the MoE crown jewel: 40 layers, 256 experts / 8 active
+(~3B active per token). Conversion fixed via
+[PR #12](https://github.com/Project-Glacie/eden.cpp/pull/12)
+(Ranger's MTP-exclusion fix, closes
+[issue #10](https://github.com/Project-Glacie/eden.cpp/issues/10)) —
+E2E verified: converted from vanilla → quantized Q4_K_M → served →
+benchmarked **173 tok/s**, the fastest model measured. Note: requires
+`thinking_budget_tokens` cap (thinking model); known teardown double-free
+at exit ([issue #13](https://github.com/Project-Glacie/eden.cpp/issues/13)),
+does not affect serving.
 
 **Qwen3.6-35B-A3B** — measured pending conversion fix (see
 [issue #10](https://github.com/Project-Glacie/eden.cpp/issues/10)):

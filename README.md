@@ -168,6 +168,7 @@ Also: `/v1/models`, `/health`, `/eden-chat.html`, `/index.html` (WebUI).
 | qwen35-4b-q4 | 2.7 GB | ~125 | 1.2s | 4B dense · 256K · image/video |
 | qwen35-9b-q4 | 5.6 GB | ~68 | 2.2s | 9B dense · 256K · image/video |
 | qwen36-27b-q4 | 16.5 GB | ~23 | 7.9s | 27B dense · 256K · image/video |
+| **qwen36-35b-A3B Q4_K_M** | **20.2 GB** | **~173** | 1.0s | **35B MoE (A3B) · 256K · image/video — fastest measured** |
 
 **The model data:** all numbers are engine benchmarks — what eden.cpp does with each GGUF, isolated and generation-only. Which models a runtime *deploys* (brain vs executor vs embedder) is an OE-level choice, not an engine claim.
 
