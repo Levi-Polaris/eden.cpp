@@ -1,62 +1,69 @@
-eden_add_compile_flags()
-
+# eden.cpp v1.1 — root CMakeLists.txt reconstruction (proposed fix)
+# Found broken 2026-08-05 (Ranger): shipped root CMakeLists.txt is a
+# byte-identical copy of src/CMakeLists.txt. This file restores the
+# missing parent build entry (llama.cpp-era structure, EDEN_* convention).
+# Applies at repo root as CMakeLists.txt. NOT pushed anywhere yet —
+# decision pending Levi/Haven (Haven owns R&D on eden.cpp).
 #
-# libraries
-#
+# Apply:
+#   cp ~/.eden/docs/eden-cpp-root-CMakeLists.fixed.txt <repo>/CMakeLists.txt
+# Then build per README:
+#   mkdir build && cd build && cmake .. -DGGML_VULKAN=ON -DGGML_CUDA=OFF \
+#     -DEDEN_BUILD_SERVER=ON && make -j$(nproc) eden-server
 
-# eden
+cmake_minimum_required(VERSION 3.14...3.28)
 
-file(GLOB EDEN_MODELS_SOURCES "models/*.cpp")
+project("eden.cpp" C CXX)
 
-add_library(eden
-            ../include/eden.h
-            eden-impl.cpp
-            llama.cpp
-            eden-adapter.cpp
-            eden-arch.cpp
-            eden-batch.cpp
-            eden-chat.cpp
-            eden-context.cpp
-            eden-cparams.cpp
-            eden-grammar.cpp
-            eden-graph.cpp
-            eden-hparams.cpp
-            eden-impl.cpp
-            llama.cpp
-            eden-io.cpp
-            eden-kv-cache.cpp
-            eden-kv-cache-iswa.cpp
-            eden-memory.cpp
-            eden-memory-hybrid.cpp
-            eden-memory-hybrid-iswa.cpp
-            eden-memory-recurrent.cpp
-            eden-mmap.cpp
-            eden-model-loader.cpp
-            eden-model-saver.cpp
-            eden-model.cpp
-            eden-quant.cpp
-            eden-sampler.cpp
-            eden-vocab.cpp
-            unicode-data.cpp
-            unicode.cpp
-            unicode.h
-            ${EDEN_MODELS_SOURCES}
-            )
+# --- build info (commit/compiler/target baked into version.h) ---
+include(cmake/build-info.cmake)
 
-set_target_properties(eden PROPERTIES
-    VERSION ${EDEN_INSTALL_VERSION}
-    SOVERSION 0
-    MACHO_CURRENT_VERSION 0 # keep macOS linker from seeing oversized version number
+# --- eden helper macros (defines eden_add_compile_flags) ---
+include(cmake/common.cmake)
+include(cmake/license.cmake)
+
+# --- version ---
+set(EDEN_INSTALL_VERSION "1.1.0")
+
+# --- options ---
+option(EDEN_BUILD_SERVER "build eden-server (OpenAI-compatible server)" ON)
+option(BUILD_SHARED_LIBS   "build shared libraries" OFF)
+
+# --- subprojects ---
+add_subdirectory(ggml)    # frozen ggml core (CPU + Vulkan/CUDA backends)
+add_subdirectory(common)  # eden-common-base (build info, common helpers)
+add_subdirectory(src)     # eden library (the frozen llama.cpp fork core)
+add_subdirectory(vendor/cpp-httplib)  # vendored HTTP lib for eden-server
+add_subdirectory(tools)   # eden-server, cli, quantize, perplexity, ...
+
+# --- license embedding (bakes LICENSE into the eden-common library) ---
+license_add_file("eden.cpp" "LICENSE")
+license_generate(eden-common)
+
+# --- install rules ---
+include(GNUInstallDirs)
+
+install(DIRECTORY include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(TARGETS eden
+        LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# --- package config (eden-config.cmake.in) ---
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+    cmake/eden-config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/eden-config.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/eden
 )
-
-target_include_directories(eden PRIVATE .)
-target_include_directories(eden PUBLIC ../include)
-target_compile_features   (eden PRIVATE cxx_std_17) # don't bump
-
-target_link_libraries(eden PUBLIC ggml)
-
-if (BUILD_SHARED_LIBS)
-    set_target_properties(eden PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    target_compile_definitions(eden PRIVATE EDEN_BUILD)
-    target_compile_definitions(eden PUBLIC  EDEN_SHARED)
-endif()
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/eden-config-version.cmake
+    VERSION ${EDEN_INSTALL_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/eden-config.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/eden-config-version.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/eden
+)
