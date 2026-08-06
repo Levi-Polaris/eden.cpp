@@ -149,13 +149,23 @@ Also: `/v1/models`, `/health`, `/eden-chat.html`, `/index.html` (WebUI).
 
 ## Performance
 
-**Generation throughput measured on our production rig (2x RTX 5060 Ti 16GB, split GPU offload).**
+**Generation throughput — measured 2026-08-05 on our production rig (2x RTX 5060 Ti 16GB, split GPU offload). Isolated servers, warm-up, generation-only (excludes load time). Full data + methodology: [BENCHMARKS.md](docs/BENCHMARKS.md).**
 
-| Format | Model | PPL (wikitext-2) | Size | Generation tok/s | Notes |
-|---|---|---|---|---|---|
-| Q4_K_M | Gemma 4 26B-A4B | 13.69 | 16.8 GB | **~103 tok/s** | Production primary — measured live 2026-08-05 |
-| Q4_K_M | Gemma 4 31B-A4B | — | 18.7 GB | ~20 tok/s | Measured live 2026-08-05 |
-| NVFP4 | — | 14.55 | 2.6 GB | — | Experimental (Blackwell only) — pipeline under rebuild |
+| Model | Size | Generation tok/s | TTFT | Notes |
+|---|---|---|---|---|
+| **gemma4-e2b-native Q4_K_M** | **3.3 GB** | **~119** | 1.2s | 🏆 ship model — omni (text/audio/vision/video), 131K ctx |
+| qwen35-4b-q4 | 2.7 GB | ~125 | 1.2s | fastest complete answers; executor sweet spot |
+| qwen35-9b-q4 | 5.6 GB | ~68 | 2.2s | strong mid |
+| gemma-4-12B-uncensored | 8.5 GB | ~45 | 3.8s | solid |
+| qwen36-27b-q4 | 16.5 GB | ~23 | 7.9s | big brain |
+| **gemma-4-26B-A4B Q4_K_M** | **16.8 GB** | **~96** | 2.0s | production primary |
+| gemma-4-31B-A4B | 18.7 GB | ~16 | 9.3s | biggest |
+
+**The ship model — Gemma 4 E2B (native Q4_K_M):** a 2B-class omni model (audio + vision + video tokens, 280 vision soft-tokens/image) at 3.3 GB that runs at 119 tok/s — as fast as the 26B production brain at 1/5 the size, with sliding-window attention (512) + 20 shared KV layers for long, cheap sessions. The recommended default brain for Eden OE public runtimes.
+
+**Methodology:** isolated per-model eden-server instances (`-ngl 99 --flash-attn on --cache-type-k/v q8_0`), warmed, then generation-only tok/s (tokens after TTFT ÷ time after TTFT). Router-mode `--models-dir` autoload contaminates throughput 2-16x — it's for discovery, not serving. Thinking models capped via `thinking_budget_tokens`. See [BENCHMARKS.md](docs/BENCHMARKS.md) for the full numbers, the 2B anti-loop sampler findings, and the operational notes.
+
+> Note: earlier README revisions listed throughput in the thousands of tok/s — those were prefill (prompt-processing), not generation. Generation is 20-125 tok/s on this hardware. Benchmarks without a stated methodology should be treated as unverified.
 
 **Methodology:** live `/v1/chat/completions` calls on the production server, wall-clock including model thinking time, tokens counted from API `usage.completion_tokens`. These are end-to-end generation speeds a user actually experiences.
 
