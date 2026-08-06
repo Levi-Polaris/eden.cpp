@@ -29,6 +29,13 @@ set(EDEN_INSTALL_VERSION "1.1.0")
 option(EDEN_BUILD_SERVER "build eden-server (OpenAI-compatible server)" ON)
 option(BUILD_SHARED_LIBS   "build shared libraries" OFF)
 
+# --- global include paths (Ranger A7, 2026-08-05) ---
+# vendor/ provides <nlohmann/json.hpp>; include/ provides eden.h. Both must
+# be visible to EVERY subproject BEFORE add_subdirectory or the compile
+# fails (src/eden-safetensors-preload.h includes nlohmann/json.hpp).
+include_directories(${CMAKE_SOURCE_DIR}/vendor)
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
 # --- subprojects ---
 add_subdirectory(ggml)    # frozen ggml core (CPU + Vulkan/CUDA backends)
 add_subdirectory(common)  # eden-common-base (build info, common helpers)
