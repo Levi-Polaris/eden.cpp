@@ -26,21 +26,22 @@ offload), eden-server, generation-only throughput.
 | qwen35-9b-q4 | 68 | 2.23 | 5.6 GB | strong mid |
 | gemma-4-12b | 45 | 3.82 | 8.5 GB | solid |
 | qwen36-27b-q4 | 23 | 7.91 | 16.5 GB | big brain, slower |
-| **gemma-4-26b (A4B)** | **96** | 1.99 | 16.8 GB | production primary |
+| **gemma-4-26b (A4B)** | **96** | 1.99 | 16.8 GB | MoE (A4B) |
 | gemma-4-31b | 16 | 9.30 | 18.7 GB | biggest, slowest |
 
-## Ship Candidates (the small ones that matter)
+## Small-Model Comparison (2B-4B class)
 
 | Model | tok/s | TTFT (s) | Size | Notes |
 |---|---|---|---|---|
-| **gemma4-e2b-native Q4_K_M** | **119** | 1.17 | **3.3 GB** | 🏆 ship pick — omni, sliding-window, 131K ctx |
+| **gemma4-e2b-native Q4_K_M** | **119** | 1.17 | **3.3 GB** | 2B omni, sliding-window, 131K ctx |
 | qwen35-4b-q4 | 102 | 1.18 | 2.7 GB | most complete answers (1032 chars) |
 | gemma4-E4B Q4_K_M | 92 | 1.93 | 5.3 GB | solid, bigger |
 | gemma4-e2b-text | 64 | 1.98 | 8.9 GB | f16-class bloat — native Q4 wins 2x at 1/3 size |
 
-## The Ship Model: Gemma 4 E2B (native Q4_K_M)
+# The E2B Model (2B-class omni)
 
-The recommended default brain for Eden OE public runtimes:
+Engine-level notes on the 2B-class omni model (deployment role — executor
+vs brain — is an Eden OE choice, not an engine claim):
 - **Omni**: text + audio + vision + video tokens (config: audio_token_id
   258881, image_token_id 258880, video_token_id 258884; 280 vision soft
   tokens/image)
@@ -48,8 +49,7 @@ The recommended default brain for Eden OE public runtimes:
 - Sliding-window attention (512) + 20 shared KV layers — tiny KV cache,
   long sessions
 - 131K max context
-- **119 tok/s** measured — as fast as the 26B production brain at 1/5
-  the size
+- **119 tok/s** measured — fastest small model in the ladder
 
 ## Operational Findings
 
