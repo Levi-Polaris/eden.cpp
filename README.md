@@ -149,17 +149,25 @@ Also: `/v1/models`, `/health`, `/eden-chat.html`, `/index.html` (WebUI).
 
 ## Performance
 
-**Generation throughput — measured 2026-08-05 on our production rig (2x RTX 5060 Ti 16GB, split GPU offload). Isolated servers, warm-up, generation-only (excludes load time). Full data + methodology: [BENCHMARKS.md](docs/BENCHMARKS.md).**
+**Generation throughput — measured 2026-08-05 on our production rig (2x RTX 5060 Ti 16GB, split GPU offload). Isolated servers, warm-up, generation-only (excludes load time). Family-split scorecard + full data: [BENCHMARKS.md](docs/BENCHMARKS.md).**
+
+### Gemma Family
 
 | Model | Size | Generation tok/s | TTFT | Notes (class · ctx · modality) |
 |---|---|---|---|---|
 | gemma4-e2b-native Q4_K_M | 3.3 GB | ~119 | 1.2s | 2B dense · 131K · omni (text/audio/vision/video) |
-| qwen35-4b-q4 | 2.7 GB | ~125 | 1.2s | 4B dense · 256K · image/video |
-| qwen35-9b-q4 | 5.6 GB | ~68 | 2.2s | 9B dense · 256K · image/video |
+| gemma4-E4B Q4_K_M | 5.3 GB | ~92 | 1.9s | 4B dense · 32K+ · text |
 | gemma-4-12B-uncensored | 8.5 GB | ~45 | 3.8s | 12B dense · 32K+ · text |
-| qwen36-27b-q4 | 16.5 GB | ~23 | 7.9s | 27B dense · 256K · image/video |
 | gemma-4-26B-A4B Q4_K_M | 16.8 GB | ~96 | 2.0s | 26B MoE (A4B) · 128K · omni |
 | gemma-4-31B-A4B | 18.7 GB | ~16 | 9.3s | 31B MoE (A4B) · 128K · omni |
+
+### Qwen Family
+
+| Model | Size | Generation tok/s | TTFT | Notes (class · ctx · modality) |
+|---|---|---|---|---|
+| qwen35-4b-q4 | 2.7 GB | ~125 | 1.2s | 4B dense · 256K · image/video |
+| qwen35-9b-q4 | 5.6 GB | ~68 | 2.2s | 9B dense · 256K · image/video |
+| qwen36-27b-q4 | 16.5 GB | ~23 | 7.9s | 27B dense · 256K · image/video |
 
 **The model data:** all numbers are engine benchmarks — what eden.cpp does with each GGUF, isolated and generation-only. Which models a runtime *deploys* (brain vs executor vs embedder) is an OE-level choice, not an engine claim.
 
