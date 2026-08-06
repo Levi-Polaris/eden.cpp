@@ -1,6 +1,6 @@
 # eden.cpp — Sovereign Inference Engine
 
-A frozen fork of llama.cpp with native Blackwell FP4 support (via NVFP4 quantization tool), Vulkan backend, embedded chat UI with persistence, and QWEN35 architecture support.
+A frozen fork of llama.cpp, hardened for sovereignty: native Blackwell FP4 (NVFP4), Vulkan + CUDA backends, embedded chat UI with persistence, and architecture support for **Gemma 3/4, Qwen 3/3.5 (+MTP/MoE), DeepSeek 2, and 180+ architectures**.
 
 **MIT licensed. One binary. Zero cloud.**
 
@@ -9,10 +9,10 @@ A frozen fork of llama.cpp with native Blackwell FP4 support (via NVFP4 quantiza
 ## Quick Start
 
 ```bash
-# Download base model (Bartowski's Qwen3.5-4B Q4_K_M)
-wget https://huggingface.co/bartowski/Qwen_Qwen3.5-4B-GGUF/resolve/main/Qwen_Qwen3.5-4B-Q4_K_M.gguf
+# Download a base model (Gemma 4 26B-A4B — our production model, ~103 tok/s on 2x 5060 Ti)
+wget https://huggingface.co/Huihui/Gemma-4-26B-A4B-abliterated-GGUF/resolve/main/Huihui-gemma-4-26B-A4B-abliterated-Q4_K.gguf
 
-# Download our distilled LoRA
+# Or our distilled LoRA (Qwen3.5-4B base)
 wget https://huggingface.co/FrostiSteele/eden-4b-distilled-lora/resolve/main/eden-4b-distilled-lora.gguf
 
 # Build and run
@@ -20,21 +20,37 @@ git clone https://github.com/Project-Glacie/eden.cpp
 cd eden.cpp && mkdir build && cd build
 cmake .. -DGGML_CUDA=ON -DEDEN_BUILD_SERVER=ON
 make -j$(nproc) eden-server
-./bin/eden-server -m Qwen_Qwen3.5-4B-Q4_K_M.gguf --lora eden-4b-distilled-lora.gguf --port 9094
+./bin/eden-server -m /path/to/model.gguf --port 9094
 
 # Open http://localhost:9094/eden-chat.html
 ```
 
-Base: 2.9GB. LoRA: 85MB. Total: ~3GB. Fits 4GB+ VRAM GPUs.
+Fits 4GB+ VRAM GPUs (Qwen3.5-4B Q4_K_M: 2.9GB base + 85MB LoRA ≈ 3GB total).
+
+---
+
+## Supported Architectures
+
+The engine runs any GGUF model for **180+ architectures** (full llama.cpp set plus our additions). Notable:
+
+| Family | Architectures |
+|---|---|
+| **Gemma** | gemma, gemma2, gemma3, gemma3n, **gemma4** |
+| **Qwen** | qwen, qwen2, qwen2moe, qwen2vl, qwen3, qwen3moe, qwen3next, qwen3vl, qwen3vlmoe, **qwen35, qwen35moe, qwen35_mtp, qwen35moe_mtp** |
+| **DeepSeek** | deepseek, deepseek2, deepseek2-ocr |
+| **Llama** | eden (llama), eden4 (llama4), deci, falcon, grok, gpt2, gptj, gptneox, mpt, baichuan, starcoder, refact, bloom, stablelm |
+| **BERT family** | bert, modern-bert, nomic-bert (+moe), neo-bert, jina-bert-v2/v3, eurobert |
+| **Others** | phi2, phi3, phimoe, plamo/2/3, codeshell, orion, internlm2, minicpm/3, and 130+ more |
+
+**Gemma 4** (gemma4) is our production architecture — the engine serves it at 103 tok/s on 2x RTX 5060 Ti.
 
 ---
 
 ## Download Models
 
-The engine runs any GGUF model. Our distilled LoRA is on HuggingFace:
-
 | Model | Size | Source |
 |---|---|---|
+| Gemma 4 26B-A4B Q4_K_M (production) | 16.8 GB | [Huihui](https://huggingface.co/Huihui) |
 | Base (Qwen3.5-4B Q4_K_M) | 2.9 GB | [Bartowski](https://huggingface.co/bartowski/Qwen_Qwen3.5-4B-GGUF) |
 | Eden Distilled LoRA | 85 MB | [FrostiSteele](https://huggingface.co/FrostiSteele/eden-4b-distilled-lora) |
 
@@ -56,6 +72,8 @@ make -j$(nproc) eden-server
 
 Requires CUDA 12.8+. Native Blackwell FP4 (`BLACKWELL_NATIVE_FP4 = 1` confirmed in silicon).
 
+> **Compiler pitfall:** CMake may resolve `/usr/bin/nvcc` (system CUDA 12.0) instead of the full toolkit. The 12.0 nvcc does NOT support `compute_120a`. Always pass `-DCMAKE_CUDA_COMPILER=` explicitly. See [BUILD.md](BUILD.md).
+
 ### Vulkan (AMD, Intel, older NVIDIA — any GPU)
 
 ```bash
@@ -63,8 +81,6 @@ mkdir build-vulkan && cd build-vulkan
 cmake .. -DGGML_VULKAN=ON -DGGML_CUDA=OFF -DEDEN_BUILD_SERVER=ON
 make -j$(nproc) eden-server
 ```
-
-Requires `libvulkan-dev`, `spirv-headers`, `glslang-tools`.
 
 ### CPU-only
 
@@ -84,6 +100,7 @@ make -j$(nproc) eden-server
 | `eden-quantize` | Quantize GGUF models to NVFP4, Q4_K_M, Q8_0, f16, Q2_K–Q6_K, TBQ3_0, TBQ4_0 (EdenQuant-Turbo) |
 | `eden-perplexity` | Benchmark PPL on wikitext. Compare quantization formats |
 | `eden-imatrix` | Importance matrix calibration for optimal quantization |
+| `eden-kv-cache` | KV cache management (including ISWA incremental sliding-window partitioning) |
 
 ### Quantize a model
 
@@ -117,8 +134,12 @@ Also: `/v1/models`, `/health`, `/eden-chat.html`, `/index.html` (WebUI).
 ## What We Added vs. Upstream
 
 - **NVFP4 quantization tool** — Quantize to NVFP4 format (4.85 BPW). Confirmed: `BLACKWELL_NATIVE_FP4 = 1` on RTX 5060 series. Tool available, production models ship Q4_K_M.
+- **Gemma 4 architecture** — Full Gemma 3/3N/4 support including the A4B MoE variants we run in production.
+- **QWEN35 architecture** — Qwen3.5 + MTP layer support + hybrid attention + MoE variants.
+- **DeepSeek 2** — deepseek, deepseek2, deepseek2-ocr support.
 - **EdenQuant-Turbo (TBQ)** — TBQ3_0, TBQ4_0 quantization formats from Indras-Mirror (MIT).
-- **QWEN35 architecture** — Converter patched for Qwen3.5, MTP layer support, hybrid attention.
+- **KV cache work** — `eden-kv-cache` + ISWA (incremental sliding-window attention) partitioning; KV q8_0 halves VRAM.
+- **Multimodal** — mmproj/CLIP projector support for vision models.
 - **Vulkan backend** — SPIR-V header fixes for Ubuntu, cross-GPU compatibility.
 - **Embedded chat UI** — `eden-chat.html`, zero dependencies, dark theme, conversation persistence.
 - **Full eval pipeline** — `eden-perplexity` + `eden-imatrix`, benchmarked across formats.
