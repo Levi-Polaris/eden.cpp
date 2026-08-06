@@ -1,5 +1,5 @@
-set(BUILD_NUMBER 0)
-set(BUILD_COMMIT "unknown")
+set(EDEN_BUILD_NUMBER 0)
+set(EDEN_BUILD_COMMIT "unknown")
 set(BUILD_COMPILER "unknown")
 set(BUILD_TARGET "unknown")
 
@@ -25,7 +25,7 @@ if(Git_FOUND)
         RESULT_VARIABLE RES
     )
     if (RES EQUAL 0)
-        set(BUILD_COMMIT ${HEAD})
+        set(EDEN_BUILD_COMMIT ${HEAD})
     endif()
     execute_process(
         COMMAND ${GIT_EXECUTABLE} rev-list --count HEAD
@@ -35,7 +35,7 @@ if(Git_FOUND)
         RESULT_VARIABLE RES
     )
     if (RES EQUAL 0)
-        set(BUILD_NUMBER ${COUNT})
+        set(EDEN_BUILD_NUMBER ${COUNT})
     endif()
 endif()
 
