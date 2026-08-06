@@ -128,13 +128,17 @@ Also: `/v1/models`, `/health`, `/eden-chat.html`, `/index.html` (WebUI).
 
 ## Performance
 
-Benchmarked on RTX 5060 Ti (16GB), wikitext-2 test set.
+**Generation throughput measured on our production rig (2x RTX 5060 Ti 16GB, split GPU offload).**
 
-| Format | PPL | Size | Throughput | Notes |
-|---|---|---|---|---|
-| f16 | 13.41 | 8.3 GB | 8,305 tok/s | Baseline |
-| **Q4_K_M** | **13.69** | **2.7 GB** | **8,404 tok/s** | **Recommended — production models** |
-| NVFP4 | 14.55 | 2.6 GB | 11,111 tok/s | Experimental tool (Blackwell only) |
+| Format | Model | PPL (wikitext-2) | Size | Generation tok/s | Notes |
+|---|---|---|---|---|---|
+| Q4_K_M | Gemma 4 26B-A4B | 13.69 | 16.8 GB | **~103 tok/s** | Production primary — measured live 2026-08-05 |
+| Q4_K_M | Gemma 4 31B-A4B | — | 18.7 GB | ~20 tok/s | Measured live 2026-08-05 |
+| NVFP4 | — | 14.55 | 2.6 GB | — | Experimental (Blackwell only) — pipeline under rebuild |
+
+**Methodology:** live `/v1/chat/completions` calls on the production server, wall-clock including model thinking time, tokens counted from API `usage.completion_tokens`. These are end-to-end generation speeds a user actually experiences.
+
+> Note: earlier README revisions listed throughput in the thousands of tok/s. Those figures are **prompt-processing (prefill) throughput**, not generation — prefill processes the full input batch in parallel and legitimately reaches 5-15k tok/s on Blackwell, but it is NOT the speed at which the model writes tokens. Generation (the number that matters for interactive use) is 20-100 tok/s on this hardware. The table above shows generation. Benchmarks without a stated methodology should be treated as unverified.
 
 ---
 
