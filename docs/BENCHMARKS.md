@@ -16,40 +16,49 @@ offload), eden-server, generation-only throughput.
 - **Thinking models** (qwen35 family): capped with
   `thinking_budget_tokens` so they return visible content instead of
   burning the whole budget on <think> (param per server-common.cpp:1178).
+- **Notes format**: mini model cards — `class · context · modality`
+  (modality from model configs: image/video = vision-capable,
+  omni = text+audio+vision+video).
 
-## The Speed Ladder
+---
 
-| Model | tok/s | TTFT (s) | Size | Notes (class · ctx · modality) |
+## Gemma Family
+
+| Model | Size | tok/s | TTFT (s) | Notes (class · ctx · modality) |
 |---|---|---|---|---|
-| qwen35-2b-q4 | 0 | — | 1.2 GB | 2B dense · 256K · image/video — needs anti-loop penalties (repeat/dry); useless with defaults |
-| qwen35-4b-q4 | 125 | 1.17 | 2.7 GB | 4B dense · 256K · image/video |
-| qwen35-9b-q4 | 68 | 2.23 | 5.6 GB | 9B dense · 256K · image/video |
-| gemma-4-12b | 45 | 3.82 | 8.5 GB | 12B dense · 32K+ · text |
-| qwen36-27b-q4 | 23 | 7.91 | 16.5 GB | 27B dense · 256K · image/video |
-| gemma-4-26b (A4B) | 96 | 1.99 | 16.8 GB | 26B MoE (A4B) · 128K · omni |
-| gemma-4-31b | 16 | 9.30 | 18.7 GB | 31B MoE (A4B) · 128K · omni |
+| gemma4-e2b-native Q4_K_M | 3.3 GB | 119 | 1.17 | 2B dense · 131K · omni (text/audio/vision/video) |
+| gemma4-e2b-text | 8.9 GB | 64 | 1.98 | 2B dense · 131K · omni (f16-class — native Q4 wins 2x at 1/3 size) |
+| gemma4-E4B Q4_K_M | 5.3 GB | 92 | 1.93 | 4B dense · 32K+ · text |
+| gemma-4-12B-uncensored | 8.5 GB | 45 | 3.82 | 12B dense · 32K+ · text |
+| gemma-4-26B-A4B Q4_K_M | 16.8 GB | 96 | 1.99 | 26B MoE (A4B) · 128K · omni |
+| gemma-4-31B-A4B | 18.7 GB | 16 | 9.30 | 31B MoE (A4B) · 128K · omni |
 
-## Small-Model Comparison (2B-4B class)
-
-| Model | tok/s | TTFT (s) | Size | Notes (class · ctx · modality) |
-|---|---|---|---|---|
-| gemma4-e2b-native Q4_K_M | 119 | 1.17 | 3.3 GB | 2B dense · 131K · omni (text/audio/vision/video) |
-| qwen35-4b-q4 | 102 | 1.18 | 2.7 GB | 4B dense · 256K · image/video |
-| gemma4-E4B Q4_K_M | 92 | 1.93 | 5.3 GB | 4B dense · 32K+ · text |
-| gemma4-e2b-text | 64 | 1.98 | 8.9 GB | 2B dense · 131K · omni (f16-class — native Q4 wins 2x at 1/3 size) |
-
-# The E2B Model (2B-class omni)
-
-Engine-level notes on the 2B-class omni model (deployment role — executor
-vs brain — is an Eden OE choice, not an engine claim):
-- **Omni**: text + audio + vision + video tokens (config: audio_token_id
+**Gemma 4 E2B** (2B-class omni) — engine-level notes (deployment role is
+an Eden OE choice, not an engine claim):
+- Omni: text + audio + vision + video tokens (config: audio_token_id
   258881, image_token_id 258880, video_token_id 258884; 280 vision soft
   tokens/image)
-- 2B class, 3.3 GB Q4 — fits any modern GPU
 - Sliding-window attention (512) + 20 shared KV layers — tiny KV cache,
   long sessions
-- 131K max context
-- **119 tok/s** measured — fastest small model in the ladder
+- 131K max context; 3.3 GB Q4 fits any modern GPU
+
+---
+
+## Qwen Family
+
+| Model | Size | tok/s | TTFT (s) | Notes (class · ctx · modality) |
+|---|---|---|---|---|
+| qwen35-2b-q4 | 1.2 GB | 0 | — | 2B dense · 256K · image/video — needs anti-loop penalties (repeat/dry); useless with defaults |
+| qwen35-4b-q4 | 2.7 GB | 125 | 1.17 | 4B dense · 256K · image/video |
+| qwen35-9b-q4 | 5.6 GB | 68 | 2.23 | 9B dense · 256K · image/video |
+| qwen36-27b-q4 | 16.5 GB | 23 | 7.91 | 27B dense · 256K · image/video |
+
+**Qwen3.6-35B-A3B** — measured pending conversion fix (see
+[issue #10](https://github.com/Project-Glacie/eden.cpp/issues/10)):
+40-layer MoE (256 experts / 8 active), 256K ctx, image/video modality.
+Vanilla source complete; GGUF conversion drops `blk.40.attn_norm.weight`.
+
+---
 
 ## Operational Findings
 
@@ -63,9 +72,17 @@ vs brain — is an Eden OE choice, not an engine claim):
 3. **Thinking models return EMPTY content without `thinking_budget_tokens`**
    — they spend the whole budget reasoning. Cap it per-model.
 
+---
+
 ## Bench Scripts
 
 - `model_shootout.py` — router-mode sweep (fast, contaminated — use for
   model discovery only)
 - `bench_models.py` — isolated per-model generation-only benchmark
   (the numbers above)
+
+---
+
+*Scorecard goal: expand by family as we test more — Llama, DeepSeek,
+Mistral, Phi, etc. Same methodology, same mini-card format, so the
+families are directly comparable at the same sizes.*
