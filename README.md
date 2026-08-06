@@ -153,15 +153,15 @@ Also: `/v1/models`, `/health`, `/eden-chat.html`, `/index.html` (WebUI).
 
 | Model | Size | Generation tok/s | TTFT | Notes |
 |---|---|---|---|---|
-| **gemma4-e2b-native Q4_K_M** | **3.3 GB** | **~119** | 1.2s | 🏆 ship model — omni (text/audio/vision/video), 131K ctx |
-| qwen35-4b-q4 | 2.7 GB | ~125 | 1.2s | fastest complete answers; executor sweet spot |
+| **gemma4-e2b-native Q4_K_M** | **3.3 GB** | **~119** | 1.2s | 2B-class omni (text/audio/vision/video), 131K ctx |
+| qwen35-4b-q4 | 2.7 GB | ~125 | 1.2s | fastest of the ladder |
 | qwen35-9b-q4 | 5.6 GB | ~68 | 2.2s | strong mid |
 | gemma-4-12B-uncensored | 8.5 GB | ~45 | 3.8s | solid |
 | qwen36-27b-q4 | 16.5 GB | ~23 | 7.9s | big brain |
-| **gemma-4-26B-A4B Q4_K_M** | **16.8 GB** | **~96** | 2.0s | production primary |
+| **gemma-4-26B-A4B Q4_K_M** | **16.8 GB** | **~96** | 2.0s | dense-class MoE (A4B) |
 | gemma-4-31B-A4B | 18.7 GB | ~16 | 9.3s | biggest |
 
-**The ship model — Gemma 4 E2B (native Q4_K_M):** a 2B-class omni model (audio + vision + video tokens, 280 vision soft-tokens/image) at 3.3 GB that runs at 119 tok/s — as fast as the 26B production brain at 1/5 the size, with sliding-window attention (512) + 20 shared KV layers for long, cheap sessions. The recommended default brain for Eden OE public runtimes.
+**The model data:** all numbers are engine benchmarks — what eden.cpp does with each GGUF, isolated and generation-only. Which models a runtime *deploys* (brain vs executor vs embedder) is an OE-level choice, not an engine claim.
 
 **Methodology:** isolated per-model eden-server instances (`-ngl 99 --flash-attn on --cache-type-k/v q8_0`), warmed, then generation-only tok/s (tokens after TTFT ÷ time after TTFT). Router-mode `--models-dir` autoload contaminates throughput 2-16x — it's for discovery, not serving. Thinking models capped via `thinking_budget_tokens`. See [BENCHMARKS.md](docs/BENCHMARKS.md) for the full numbers, the 2B anti-loop sampler findings, and the operational notes.
 
