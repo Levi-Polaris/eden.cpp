@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <string>
 
-int EDEN_BUILD_NUMBER = 0;
+int EDEN_BUILD_NUMBER = @EDEN_BUILD_NUMBER@;
 char const * EDEN_COMMIT = "@EDEN_BUILD_COMMIT@";
 char const * EDEN_COMPILER = "@BUILD_COMPILER@";
 char const * EDEN_BUILD_TARGET = "@BUILD_TARGET@";
