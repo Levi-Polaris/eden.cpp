@@ -112,9 +112,9 @@ const char * mtmd_default_marker() {
 
 static clip_flash_attn_type mtmd_get_clip_flash_attn_type(enum eden_flash_attn_type flash_attn_type) {
     switch (flash_attn_type) {
-        case LLAMA_FLASH_ATTN_TYPE_AUTO:     return CLIP_FLASH_ATTN_TYPE_AUTO;
-        case LLAMA_FLASH_ATTN_TYPE_DISABLED: return CLIP_FLASH_ATTN_TYPE_DISABLED;
-        case LLAMA_FLASH_ATTN_TYPE_ENABLED:  return CLIP_FLASH_ATTN_TYPE_ENABLED;
+        case EDEN_FLASH_ATTN_TYPE_AUTO:     return CLIP_FLASH_ATTN_TYPE_AUTO;
+        case EDEN_FLASH_ATTN_TYPE_DISABLED: return CLIP_FLASH_ATTN_TYPE_DISABLED;
+        case EDEN_FLASH_ATTN_TYPE_ENABLED:  return CLIP_FLASH_ATTN_TYPE_ENABLED;
     }
     return CLIP_FLASH_ATTN_TYPE_AUTO;
 }
@@ -126,7 +126,7 @@ mtmd_context_params mtmd_context_params_default() {
         /* n_threads         */ 4,
         /* image_marker      */ nullptr,
         /* media_marker      */ mtmd_default_marker(),
-        /* flash_attn_type   */ LLAMA_FLASH_ATTN_TYPE_AUTO,
+        /* flash_attn_type   */ EDEN_FLASH_ATTN_TYPE_AUTO,
         /* warmup            */ true,
         /* image_min_tokens  */ -1,
         /* image_max_tokens  */ -1,
@@ -195,14 +195,14 @@ struct mtmd_context {
 
         auto decoder_rope_type = eden_model_rope_type(text_model);
         switch (decoder_rope_type) {
-            case LLAMA_ROPE_TYPE_NONE:
-            case LLAMA_ROPE_TYPE_NORM:
-            case LLAMA_ROPE_TYPE_NEOX:
+            case EDEN_ROPE_TYPE_NONE:
+            case EDEN_ROPE_TYPE_NORM:
+            case EDEN_ROPE_TYPE_NEOX:
                 {
                     pos_type = MTMD_POS_TYPE_NORMAL;
                 } break;
-            case LLAMA_ROPE_TYPE_MROPE:
-            case LLAMA_ROPE_TYPE_IMROPE:
+            case EDEN_ROPE_TYPE_MROPE:
+            case EDEN_ROPE_TYPE_IMROPE:
                 {
                     pos_type = MTMD_POS_TYPE_MROPE;
                 } break;
@@ -596,7 +596,7 @@ private:
                 return i;
             }
         }
-        return LLAMA_TOKEN_NULL;
+        return EDEN_TOKEN_NULL;
     }
 
     std::string token_to_piece(const eden_vocab * vocab, eden_token token, bool special) {
