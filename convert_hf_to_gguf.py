@@ -5629,6 +5629,24 @@ class Qwen3_5TextModel(_Qwen35MtpMixin, _Qwen35MRopeMixin, _LinearAttentionVReor
 class Qwen3_5MoeTextModel(_Qwen35MtpMixin, _Qwen35MRopeMixin, _LinearAttentionVReorderBase):
     model_arch = gguf.MODEL_ARCH.QWEN35MOE
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Exclude MTP layers from block_count (not used at inference yet)
+        # — same treatment as Qwen3_5TextModel. Without this, block_count =
+        #   num_hidden_layers + mtp_num_hidden_layers (e.g. 40+1=41 for the
+        #   35B), so the loader demands blk.40.attn_norm — but the MTP block
+        #   only carries nextn tensors (no attention) -> 'missing tensor
+        #   blk.40.attn_norm.weight' on load. Fixes issue #10.
+        self.block_count = self.hparams["num_hidden_layers"]
+        self.tensor_map = gguf.get_tensor_name_map(self.model_arch, self.block_count)
+
+    @classmethod
+    def filter_tensors(cls, item):
+        name, gen = item
+        if name.startswith("mtp"):
+            return None
+        return super().filter_tensors(item)
+
 
 # MiniCPM-V 4.6: text tower is Qwen3.5 (linear+full hybrid attention) wrapped under
 # `model.language_model.*`; vision tower is SigLIP + a window-attention ViT merger
